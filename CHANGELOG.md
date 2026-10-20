@@ -15,6 +15,17 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **A ChatGPT plan can run MIMIR, with no key and no server.** `LLM_BACKEND=codex`
+  (or "OpenAI Codex" in the Connect panel) uses the login `codex login` already left in
+  `~/.codex/auth.json` and talks to the endpoint the Codex CLI uses, so requests count
+  against the plan rather than an API account. The model list is the account's own.
+  Reasoning survives tool calls: the encrypted reasoning items are sent back on every
+  step. A refresh token is single-use and the file is shared with the CLI, so a refresh
+  first checks whether the CLI already rotated the pair, and writes the new one back in
+  the CLI's own layout; the CLI stays logged in. The endpoint is not a published API and
+  may change.
+
 ## [1.11.1] — 2026-10-23
 
 ### Fixed

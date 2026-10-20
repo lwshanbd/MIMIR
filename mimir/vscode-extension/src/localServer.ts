@@ -111,6 +111,7 @@ export class LocalServer {
       : backend === "ray" ? ` --backend ray --ray-base-url ${baseUrl}`
       : backend === "ollama" ? ` --backend ollama --ollama-base-url ${baseUrl}`
       : backend === "anthropic" ? " --backend anthropic"
+      : backend === "codex" ? " --backend codex"
       : "";
     // `--port 0`: the OS picks a free port, which the server publishes. `exec` makes
     // `kill()` reach python itself. Output goes to a file: a pipe held by this host
@@ -127,7 +128,7 @@ export class LocalServer {
 
     // An HTTP proxy silently swallows requests to an on-prem endpoint, so
     // ws_server would hang on model resolution before ever binding its port.
-    const noProxyEnv = backend === "anthropic" ? {} : noProxyFor(baseUrl);
+    const noProxyEnv = backend === "anthropic" || backend === "codex" ? {} : noProxyFor(baseUrl);
     // Only override ANTHROPIC_API_KEY when the webview actually supplied one;
     // otherwise inherit whatever is already exported (so users who set the key in
     // their shell don't have to retype it in the form).

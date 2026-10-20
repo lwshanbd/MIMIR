@@ -115,11 +115,11 @@ class ThinkingExtraBodyTest(unittest.TestCase):
 
     def test_effort_ladder_climbs_with_the_budget(self):
         levels = ["low", "medium", "high"]
-        self.assertEqual(openai_compat._effort_level(levels, 512), "low")
-        self.assertEqual(openai_compat._effort_level(levels, 4096), "medium")
-        self.assertEqual(openai_compat._effort_level(levels, 16384), "high")
+        self.assertEqual(openai_compat.effort_level(levels, 512), "low")
+        self.assertEqual(openai_compat.effort_level(levels, 4096), "medium")
+        self.assertEqual(openai_compat.effort_level(levels, 16384), "high")
         # -1 is "model-chosen"/unlimited, which an effort scale can only call middling.
-        self.assertEqual(openai_compat._effort_level(levels, -1), "medium")
+        self.assertEqual(openai_compat.effort_level(levels, -1), "medium")
 
     def test_a_family_gets_its_own_ladder_not_openai_s(self):
         """The rung sent must be one the template accepts.

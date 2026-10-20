@@ -60,12 +60,17 @@ export const ConnectForm: React.FC<Props> = ({
   const [remember, setRemember] = useState(remembered !== null);
 
   const anthropic = backend === "anthropic";
+  // Codex has no address either: the server uses the Codex CLI's login.
+  const codex = backend === "codex";
+  const hosted = anthropic || codex;
   const options = anthropic ? anthropicModels : models;
 
   const handleBackendChange = (next: string) => {
     setBackend(next);
     setModel("");
-    if (next !== "anthropic") setUrl(defaultUrl(next, vllmBaseUrl, rayBaseUrl, ollamaBaseUrl));
+    if (next !== "anthropic" && next !== "codex") {
+      setUrl(defaultUrl(next, vllmBaseUrl, rayBaseUrl, ollamaBaseUrl));
+    }
   };
 
   // Ask the endpoint what it serves, debounced so typing an address doesn't fire
@@ -74,9 +79,13 @@ export const ConnectForm: React.FC<Props> = ({
   urlRef.current = url;
   useEffect(() => {
     if (anthropic) return;
+    if (codex) {
+      onFetchModels(backend, "");
+      return;
+    }
     const t = setTimeout(() => onFetchModels(backend, urlRef.current), 600);
     return () => clearTimeout(t);
-  }, [backend, url, anthropic, onFetchModels]);
+  }, [backend, url, anthropic, codex, onFetchModels]);
 
   // A probe waits up to 30 s on the endpoint, because a reachable one behind a VPN
   // or still loading weights often takes several seconds to answer. Past a few of
@@ -86,10 +95,10 @@ export const ConnectForm: React.FC<Props> = ({
   const [slow, setSlow] = useState(false);
   useEffect(() => {
     setSlow(false);
-    if (anthropic || modelsProbed || modelsError) return;
+    if (hosted || modelsProbed || modelsError) return;
     const t = setTimeout(() => setSlow(true), 4000);
     return () => clearTimeout(t);
-  }, [backend, url, anthropic, modelsProbed, modelsError]);
+  }, [backend, url, hosted, modelsProbed, modelsError]);
 
   // The model is picked from what the endpoint serves. The remembered model wins
   // over the first entry, so a reconnect lands on the same model as last time —
@@ -118,10 +127,22 @@ export const ConnectForm: React.FC<Props> = ({
           <option value="ray">Ray Serve</option>
           <option value="ollama">Ollama</option>
           <option value="anthropic">Anthropic (Claude)</option>
+          <option value="codex">OpenAI Codex (ChatGPT login)</option>
         </select>
       </div>
 
-      {anthropic ? (
+      {codex ? (
+        <div className="connect-field">
+          <div className="connect-field-hint">
+            Uses the login from <code>codex login</code>, billed to your ChatGPT plan.
+          </div>
+          {modelsError && (
+            <div className="connect-field-hint connect-field-error">
+              {modelsError}
+            </div>
+          )}
+        </div>
+      ) : anthropic ? (
         <div className="connect-field">
           <label className="connect-label">API key</label>
           <input
@@ -182,7 +203,14 @@ export const ConnectForm: React.FC<Props> = ({
           <label className="connect-label">Model</label>
           <div className="connect-field-hint">{options[0]}</div>
         </div>
-      ) : !anthropic && !modelsError ? (
+      ) : codex && modelsProbed && !modelsError ? (
+        <div className="connect-field">
+          <label className="connect-label">Model</label>
+          <div className="connect-field-hint">
+            The Codex CLI has no model list cached yet — connecting will let the server pick.
+          </div>
+        </div>
+      ) : !hosted && !modelsError ? (
         // Nothing to pick from. "Asking", "answered with nothing" and "answered
         // with a list" must not all look like an empty space: the user is left
         // reading silence and concluding the feature is missing. An endpoint that
@@ -200,7 +228,7 @@ export const ConnectForm: React.FC<Props> = ({
         </div>
       ) : null}
 
-      {!anthropic && (
+      {!hosted && (
         <label className="connect-remember">
           <input
             type="checkbox"
@@ -214,7 +242,7 @@ export const ConnectForm: React.FC<Props> = ({
       <button
         className="connect-btn connect-btn-primary"
         onClick={() =>
-          onConnect(model, backend, url, anthropic ? apiKey : undefined, !anthropic && remember)
+          onConnect(model, backend, url, anthropic ? apiKey : undefined, !hosted && remember)
         }
       >
         Connect

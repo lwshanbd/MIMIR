@@ -6,7 +6,7 @@
  */
 import * as vscode from "vscode";
 import { ADDRESSED_BACKENDS } from "./endpoints";
-import { explainFetchError, fetchModels, type DiscoverableBackend } from "./modelList";
+import { codexModels, explainFetchError, fetchModels, type DiscoverableBackend } from "./modelList";
 
 export class ModelProbe {
   /**
@@ -26,6 +26,18 @@ export class ModelProbe {
 
   /** Ask *baseUrl* for its models and post them (or why not) to the webview. */
   async probe(backend: string, baseUrl: string): Promise<void> {
+    if (backend === "codex") {
+      // No address to ask: the Codex CLI's own cache of the account's models.
+      let models: string[] = [];
+      let error: string | undefined;
+      try {
+        models = codexModels();
+      } catch (err) {
+        error = err instanceof Error ? err.message : String(err);
+      }
+      this.post({ type: "models", backend, models, error });
+      return;
+    }
     if (!ADDRESSED_BACKENDS.includes(backend)) {
       return;
     }

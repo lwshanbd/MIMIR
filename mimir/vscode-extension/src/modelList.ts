@@ -6,6 +6,9 @@
  * The fetch lives in the extension host, not the webview: the webview's CSP only
  * allows `connect-src ws://localhost:*`, so React cannot reach an HTTP endpoint.
  */
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { directGet } from "./directHttp";
 
 /** Endpoints that can enumerate their own models. Anthropic keeps a static list. */
@@ -154,4 +157,42 @@ export function explainFetchError(err: unknown, baseUrl: string): string {
       + `Check the port and the backend type.`;
   }
   return `Could not get the model list from ${host} (${msg}).`;
+}
+
+/** Directory the Codex CLI keeps its login and caches in (`$CODEX_HOME`, else `~/.codex`). */
+export function codexHome(env: NodeJS.ProcessEnv = process.env): string {
+  const home = (env.CODEX_HOME ?? "").trim();
+  return home || path.join(os.homedir(), ".codex");
+}
+
+/**
+ * Models the Codex backend can offer, read from the Codex CLI's own cache.
+ *
+ * The live listing needs the login's access token, which the extension host never
+ * handles: the server reads it, and asks the endpoint itself once connected. The
+ * CLI's cache is the same listing as of its last run, so the form can still offer
+ * a choice. Hidden models are left out, and the CLI's own order is kept.
+ *
+ * Throws when there is no login, since nothing would work after connecting either.
+ */
+export function codexModels(home: string = codexHome()): string[] {
+  if (!fs.existsSync(path.join(home, "auth.json"))) {
+    throw new Error(`No Codex login found in ${home}. Run \`codex login\` in a terminal, then retry.`);
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(fs.readFileSync(path.join(home, "models_cache.json"), "utf8"));
+  } catch {
+    return [];
+  }
+  const models = (raw as Record<string, unknown> | null)?.models;
+  if (!Array.isArray(models)) {
+    return [];
+  }
+  const listed = models
+    .map((m) => m as Record<string, unknown> | null)
+    .filter((m) => m && typeof m.slug === "string" && m.slug && (m.visibility ?? "list") === "list")
+    .sort((a, b) => (Number(a!.priority) || 1e9) - (Number(b!.priority) || 1e9))
+    .map((m) => m!.slug as string);
+  return [...new Set(listed)];
 }

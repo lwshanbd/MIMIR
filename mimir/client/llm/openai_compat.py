@@ -231,7 +231,7 @@ def _create(client, create_kwargs: dict):
         return client.chat.completions.create(**create_kwargs)
 
 
-def _effort_level(levels: list[str], budget: int | None) -> str:
+def effort_level(levels: list[str], budget: int | None) -> str:
     """The rung of *levels* (weakest first) for a thinking budget, by position; unlimited takes the middle."""
     if not levels:
         return ""
@@ -267,7 +267,7 @@ def _thinking_extra_body(model: str, thinking: bool, options: dict) -> dict:
         # The rung is meaningless while reasoning is off, and a family without a
         # toggle cannot be switched off at all — it still gets its weakest rung.
         if thinking or not toggle:
-            level = _effort_level(profile["levels"], budget if thinking else 0)
+            level = effort_level(profile["levels"], budget if thinking else 0)
             if level:
                 body[profile["effort_param"]] = level
         return body

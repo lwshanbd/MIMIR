@@ -22,11 +22,13 @@ def main() -> None:
                              "port is then printed on the 'Listening on ws://…' line.")
     parser.add_argument("--model", default=None)
     parser.add_argument("--cwd", default=None, help="Set working directory before starting")
-    parser.add_argument("--backend", choices=["ollama", "vllm", "ray", "anthropic"], default=None,
+    parser.add_argument("--backend", choices=["ollama", "vllm", "ray", "anthropic", "codex"], default=None,
                         help="LLM backend to use (default: from LLM_BACKEND env var or vllm). "
                              "ray is a Ray Serve LLM router — the same OpenAI API as vLLM, at "
                              "its own address. anthropic uses the hosted Claude API — the key "
-                             "comes from the ANTHROPIC_API_KEY env var, never a CLI arg.")
+                             "comes from the ANTHROPIC_API_KEY env var, never a CLI arg. codex "
+                             "uses a ChatGPT subscription through the Codex CLI's login "
+                             "(run `codex login` first).")
     parser.add_argument("--vllm-base-url", default=None,
                         help="Base URL of the vLLM OpenAI-compatible API (overrides VLLM_BASE_URL env var)")
     parser.add_argument("--vllm-api-key", default=None,

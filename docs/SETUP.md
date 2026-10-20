@@ -13,7 +13,7 @@ Step-by-step instructions to go from a fresh clone to a running agent.
 | Python ≥ 3.10 | Any CPython distribution |
 | Git | For cloning and the GitHub MCP server |
 | Node.js ≥ 20 + npm | Only for the VS Code extension — [how to install it](#6a-get-nodejs-and-npm) |
-| An LLM server | A running vLLM, Ray Serve or Ollama endpoint you can reach over HTTP, or an Anthropic API key (see §3) |
+| An LLM server | A running vLLM, Ray Serve or Ollama endpoint you can reach over HTTP, an Anthropic API key, or a Codex CLI login on a ChatGPT plan (see §3) |
 
 ---
 
@@ -129,6 +129,7 @@ running. You supply its HTTP address, and nothing else.
 | Ray Serve | Address of the Ray Serve LLM router, route prefix included | `http://127.0.0.1:8000` |
 | Ollama | Address of the Ollama API | `http://127.0.0.1:11434` |
 | Anthropic (Claude) | An API key — no address | — |
+| OpenAI Codex | A `codex login` on a ChatGPT plan — no address, no key | — |
 
 In the VS Code extension (§6) you type the address into the Connect panel and the
 model dropdown fills itself from the endpoint. For the CLI and for headless runs,
@@ -317,6 +318,32 @@ export ANTHROPIC_API_KEY=sk-ant-...
 mimir-server --backend anthropic --model claude-sonnet-5
 ```
 
+### OpenAI Codex (ChatGPT subscription)
+
+No server and no key. MIMIR uses the login the [Codex CLI](https://github.com/openai/codex)
+already holds, so requests count against your ChatGPT plan instead of an API account:
+
+```bash
+codex login                      # once, choosing "Sign in with ChatGPT"
+mimir-server --backend codex     # or: LLM_BACKEND=codex mimir
+```
+
+The credentials are read from `~/.codex/auth.json` (`$CODEX_HOME/auth.json` if set).
+When the access token runs out, MIMIR refreshes it and writes the new pair back to
+the same file, so the Codex CLI stays logged in. The model list is the one your
+account is offered (`gpt-…`); `--model` picks one, otherwise the first is used.
+
+Things to know:
+
+- The endpoint is the one the Codex CLI talks to, not a published API. OpenAI can
+  change it without notice, and using it from a third-party tool is a grey area of
+  the ChatGPT terms. Check them before you rely on it.
+- `/temperature` does nothing here: the endpoint rejects the parameter.
+- There is no tokenizer or embedding endpoint. Token counts are estimated, and
+  memory search falls back to keyword matching.
+- `MIMIR_CODEX_EFFORT=low|medium|high|xhigh|max` pins the reasoning effort; by
+  default the thinking depth control picks it.
+
 ---
 
 ## 4. Environment Variables
@@ -327,7 +354,7 @@ most of the others from its settings ([6d](#6d-optional-settings)).
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `LLM_BACKEND` | `vllm` | `vllm`, `ray`, `ollama`, or `anthropic` |
+| `LLM_BACKEND` | `vllm` | `vllm`, `ray`, `ollama`, `anthropic`, or `codex` |
 | `MIMIR_DEFAULT_MODEL` | *(empty)* | Model selected at startup; overridden by `--model` flag or the UI |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama API endpoint (`--ollama-base-url` sets this and `OLLAMA_HOST` together) |
 | `MIMIR_OLLAMA_NUM_CTX` | *(model's context length)* | Overrides the Ollama context window (`num_ctx`) |
@@ -340,6 +367,8 @@ most of the others from its settings ([6d](#6d-optional-settings)).
 | `RAY_API_KEY` | `EMPTY` | API key for the Ray Serve router |
 | `MIMIR_RAY_MAX_MODEL_LEN` | *(unset)* | Context window to use when the Ray router does not report `max_model_len` |
 | `ANTHROPIC_API_KEY` | *(none)* | Key for the `anthropic` backend |
+| `CODEX_HOME` | `~/.codex` | Where the `codex` backend finds the Codex CLI's login |
+| `MIMIR_CODEX_EFFORT` | *(from thinking depth)* | Pin the `codex` backend's reasoning effort (`none` sends no reasoning block) |
 | `MIMIR_PYTHON` | *(none)* | Interpreter the VS Code extension starts the WS server with, when `~/.mimir/python` is absent or wrong |
 | `MIMIR_MAX_LIVE_SESSIONS` | `3` | How many conversations may hold an agent at once. The constraint is processes — each agent spawns some nineteen MCP servers — so lower it on a shared login node. Past the cap a turn waits for a slot and is told its place in line; conversations you only open or read cost nothing |
 | `MIMIR_SESSION_IDLE_TTL` | `600` | Seconds a conversation's agent may sit unused before it is released, servers included (minimum 30). Never one that is busy, parked on a question, watching a background job, or on screen |
@@ -483,11 +512,12 @@ window running it from source.
 
 Open the MIMIR panel, and in the Connect form:
 
-1. **Backend** — vLLM, Ray Serve, Ollama, or Anthropic (Claude).
+1. **Backend** — vLLM, Ray Serve, Ollama, Anthropic (Claude), or OpenAI Codex.
 2. **Address** — where that server is running, e.g. `http://10.0.0.4:8000`. The
    model dropdown fills itself from it; the ⟳ button re-reads it.
 3. **Model** — one of the models the endpoint reports. For Anthropic, an API key
-   field replaces the address.
+   field replaces the address. Codex needs neither: the list comes from the Codex
+   CLI's cache, and the server uses its login.
 4. **Remember this address** (optional) — tick it and the next VS Code window
    reconnects to this endpoint by itself, at startup, whether or not the MIMIR
    panel is open: the extension probes the address first and only connects when

@@ -14,6 +14,7 @@ BACKENDS: dict[str, tuple[str, str]] = {
     "ollama": (".ollama_backend", "OllamaBackend"),
     "anthropic": (".anthropic_backend", "AnthropicBackend"),
     "claude": (".anthropic_backend", "AnthropicBackend"),
+    "codex": (".codex_backend", "CodexBackend"),
 }
 
 _cache: dict[str, LLMBackend] = {}

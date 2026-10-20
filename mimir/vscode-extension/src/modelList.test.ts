@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import * as http from "http";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import type { AddressInfo } from "net";
-import { explainFetchError, fetchModels, modelsUrl, parseModels } from "./modelList";
+import { codexHome, codexModels, explainFetchError, fetchModels, modelsUrl, parseModels } from "./modelList";
 
 describe("modelsUrl", () => {
   it("builds the OpenAI models path for vLLM", () => {
@@ -129,5 +132,37 @@ describe("explainFetchError", () => {
     expect(explainFetchError(new Error("timed out after 5000 ms — x"), base)).toMatch(/did not answer in time/);
     expect(explainFetchError(new Error(`HTTP 404 from ${base}/v1/models`), base)).toMatch(/no model list/);
     expect(explainFetchError(new Error("invalid URL"), "not a url")).toMatch(/not a valid address/);
+  });
+});
+
+describe("codexModels", () => {
+  const home = () => fs.mkdtempSync(path.join(os.tmpdir(), "codex-home-"));
+
+  it("lists the CLI's cached models in its own order, hidden ones left out", () => {
+    const dir = home();
+    fs.writeFileSync(path.join(dir, "auth.json"), "{}");
+    fs.writeFileSync(path.join(dir, "models_cache.json"), JSON.stringify({
+      models: [
+        { slug: "gpt-b", visibility: "list", priority: 2 },
+        { slug: "gpt-hidden", visibility: "hide", priority: 0 },
+        { slug: "gpt-a", visibility: "list", priority: 1 },
+      ],
+    }));
+    expect(codexModels(dir)).toEqual(["gpt-a", "gpt-b"]);
+  });
+
+  it("is empty, not an error, when the CLI has cached no list yet", () => {
+    const dir = home();
+    fs.writeFileSync(path.join(dir, "auth.json"), "{}");
+    expect(codexModels(dir)).toEqual([]);
+  });
+
+  it("says to run codex login when there is no login", () => {
+    expect(() => codexModels(home())).toThrow(/codex login/);
+  });
+
+  it("follows CODEX_HOME", () => {
+    expect(codexHome({ CODEX_HOME: "/x/codex" })).toBe("/x/codex");
+    expect(codexHome({})).toBe(path.join(os.homedir(), ".codex"));
   });
 });

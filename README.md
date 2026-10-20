@@ -78,7 +78,8 @@ centralized in [`client/config/limits.py`](mimir/client/config/limits.py).
 ## Quick start
 
 Two commands. MIMIR talks to an LLM server you already run — a vLLM, Ray Serve or
-Ollama endpoint reachable over HTTP, or the Anthropic API.
+Ollama endpoint reachable over HTTP, the Anthropic API, or a ChatGPT plan through
+the Codex CLI's login.
 
 ```bash
 git clone https://github.com/MIMIR-LLM4CSE/MIMIR.git && cd MIMIR
@@ -121,7 +122,8 @@ supplies the tasks and scores the answers), for measuring the agent rather than 
 **Prerequisites:** Python ≥ 3.10 and one LLM server you can reach over HTTP — a vLLM
 OpenAI-compatible endpoint (the default, e.g. `http://127.0.0.1:8000`), a
 [Ray Serve LLM](https://docs.ray.io/en/latest/serve/llm/serving-llms.html) router,
-an [Ollama](https://ollama.com/) server, or an Anthropic API key. MIMIR connects to
+an [Ollama](https://ollama.com/) server, an Anthropic API key, or a `codex login` on a
+ChatGPT plan (`LLM_BACKEND=codex`, see [SETUP.md §3](docs/SETUP.md#openai-codex-chatgpt-subscription)). MIMIR connects to
 it; it never starts or schedules it.
 
 ```bash
@@ -150,10 +152,11 @@ Optional extras: `sudo apt-get install gfortran` for Fortran compilation;
 
 | Environment variable | Default | Purpose |
 |----------------------|---------|---------|
-| `LLM_BACKEND` | `vllm` | Backend selector: `vllm`, `ray`, `ollama`, or `anthropic` |
+| `LLM_BACKEND` | `vllm` | Backend selector: `vllm`, `ray`, `ollama`, `anthropic`, or `codex` |
 | `MIMIR_DEFAULT_MODEL` | *(empty)* | Model selected at startup; overridden by `--model` or the UI |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama API endpoint |
 | `ANTHROPIC_API_KEY` | *(none)* | Key for the `anthropic` backend |
+| `CODEX_HOME` | `~/.codex` | Where the `codex` backend finds the Codex CLI's login (ChatGPT plan, no key) |
 | `VLLM_BASE_URL` | `http://127.0.0.1:8000` | vLLM API base URL (client appends `/v1` if needed) |
 | `VLLM_API_KEY` | `EMPTY` | API key for vLLM OpenAI-compatible calls |
 | `RAY_BASE_URL` | `http://127.0.0.1:8000` | Ray Serve LLM router URL, route prefix included (client appends `/v1`) |

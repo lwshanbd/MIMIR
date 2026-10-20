@@ -68,10 +68,11 @@
               "ollama",
               "vllm",
               "ray",
-              "anthropic"
+              "anthropic",
+              "codex"
             ],
             "default": "vllm",
-            "description": "LLM backend: vllm (default, OpenAI-compatible API), ray (a Ray Serve LLM router — the same API, with the cluster placing and scaling the vLLM engines behind it), ollama, or anthropic (hosted Claude API)",
+            "description": "LLM backend: vllm (default, OpenAI-compatible API), ray (a Ray Serve LLM router — the same API, with the cluster placing and scaling the vLLM engines behind it), ollama, anthropic (hosted Claude API), or codex (GPT models on a ChatGPT subscription, through the Codex CLI's login)",
             "order": 1
           },
           "mimir.vllmBaseUrl": {

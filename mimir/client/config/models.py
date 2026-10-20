@@ -42,7 +42,8 @@ READONLY_MODES: frozenset[str] = frozenset({"plan", "ask"})
 # LLM backend selection — LLM_BACKEND=vllm (local vLLM, default), ray (a Ray Serve
 # LLM router: the same OpenAI API, with the cluster placing and scaling the vLLM
 # engines behind it), anthropic/claude (hosted Claude API, for evaluation against
-# local models), else Ollama.
+# local models), codex (GPT models on a ChatGPT subscription, through the Codex CLI's
+# login), else Ollama.
 LLM_BACKEND   = os.environ.get("LLM_BACKEND",   "vllm")
 VLLM_BASE_URL = os.environ.get("VLLM_BASE_URL",  "http://127.0.0.1:8000")
 VLLM_API_KEY  = os.environ.get("VLLM_API_KEY",   "EMPTY")
